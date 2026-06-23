@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Capacity Builder — Session Builder</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;400;500;600;700&display=swap');
+  :root{
+    --bone:#FAF9F5; --ink:#1a1f2a; --line:#e4e1d8; --card:#ffffff;
+    --muted:#8a877e; --soft:#f1efe8; --draft:#b9842f; --notes:#6b685f;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;font-family:'Inter',-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+    background:var(--bone);color:var(--ink);line-height:1.5;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+  header{padding:18px 26px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  header h1{margin:0;font-size:19px;letter-spacing:.2px;font-weight:700}
+  header p{margin:4px 0 0;color:var(--muted);font-size:13px}
+  .wrap{display:flex;flex:1;min-height:0}
+  .panel{padding:22px 26px}
+  .dials{width:350px;flex:0 0 350px;overflow-y:auto;display:flex;flex-direction:column}
+  #splitter{flex:0 0 7px;cursor:col-resize;border-left:1px solid var(--line);transition:background .12s}
+  #splitter:hover,#splitter.dragging{background:var(--line)}
+  .out{flex:1;min-width:0;overflow:hidden;display:flex;flex-direction:column}
+  .out .tabs{flex:0 0 auto}
+  #slidesWrap{flex:1;min-height:0;overflow-y:auto;padding-top:2px}
+  .dial{margin-bottom:26px}
+  .dial.sep{border-top:2px solid var(--line);padding-top:24px;margin-top:2px}
+  .dial label.h{display:block;font-size:11px;text-transform:uppercase;letter-spacing:1.4px;color:var(--ink);margin-bottom:10px;font-weight:700}
+  .opts{display:flex;flex-wrap:wrap;gap:6px}
+  .opt{border:1px solid var(--line);background:var(--card);color:var(--ink);
+    padding:7px 11px;border-radius:8px;cursor:pointer;font-size:13px;transition:.12s}
+  .opt:hover{border-color:var(--ink)}
+  .opt.sel{background:var(--ink);border-color:var(--ink);color:var(--bone);font-weight:600}
+  .opt.check{background:var(--card);border-color:var(--ink);color:var(--ink);font-weight:600}
+  .opt.check::before{content:"✓ ";font-weight:700}
+  .opt .dr{font-size:10px;color:var(--draft);font-style:italic}
+  .opt.sel .dr{color:var(--bone)}
+  .vars{margin-top:10px;padding-top:9px;border-top:1px dashed var(--line)}
+  .toggle{display:flex;align-items:center;gap:9px;font-size:13px;cursor:pointer;margin-top:6px}
+  .toggle input{width:15px;height:15px;accent-color:var(--ink)}
+  .toggle .dr{font-size:11px;color:var(--draft);font-style:italic}
+  .mini{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:13px}
+  .mini .mopt{border:1px solid var(--line);background:var(--card);padding:3px 9px;border-radius:7px;cursor:pointer;font-size:12px}
+  .mini .mopt.sel{background:var(--card);border-color:var(--ink);font-weight:600}
+  .mini .mopt.sel::before{content:"✓ ";font-weight:700}
+  .randbar{margin-top:auto;padding-top:16px;border-top:1px solid var(--line)}
+  .tabs{display:flex;gap:6px;margin:0 0 14px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+  .tab{padding:8px 16px;border:1px solid var(--line);border-bottom:none;background:var(--soft);color:var(--muted);
+    border-radius:9px 9px 0 0;cursor:pointer;font-size:13px;transition:.12s;position:relative;top:1px}
+  .tab:hover{color:var(--ink)}
+  .tab.sel{background:var(--bone);color:var(--ink);border-bottom:1px solid var(--bone);font-weight:600}
+  .tab .n{font-size:11px;color:var(--muted);margin-left:6px}
+  .name{font-size:17px;font-weight:700;margin:0 0 4px}
+  .flow{display:flex;gap:10px;align-items:center;margin:2px 0 16px;flex-wrap:wrap}
+  .flow .step{display:flex;align-items:center;gap:8px;border:1px solid var(--line);background:var(--card);
+    border-radius:999px;padding:5px 14px 5px 6px;font-size:13px;font-weight:600}
+  .flow .num{width:22px;height:22px;border-radius:50%;background:var(--ink);color:var(--bone);
+    display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800}
+  .flow .arr{color:var(--muted);font-size:15px}
+  .bar{display:flex;gap:9px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+  .btn{padding:8px 14px;border:1px solid var(--ink);background:var(--ink);color:var(--bone);
+    border-radius:8px;cursor:pointer;font-size:13px;font-family:inherit}
+  .btn:hover{opacity:.85}
+  .btn.ghost{background:transparent;color:var(--ink)}
+  .count{font-size:12px;color:var(--muted)}
+  .hint{font-size:12px;color:var(--muted);margin:0 0 16px}
+  .slide{border:1px solid var(--line);border-radius:10px;padding:13px 16px;margin-bottom:10px;background:var(--card)}
+  .slide.fixedc{border-style:dashed;background:transparent}
+  .slide.draftcard{border-color:var(--draft)}
+  .slide .tag{font-size:10px;text-transform:uppercase;letter-spacing:1.1px;margin-bottom:5px;color:var(--muted)}
+  .slide .tag .dtag{color:var(--draft);font-weight:700}
+  .slide .stu{font-size:16px;margin:2px 0 0;font-weight:600}
+  .slide .bod{font-size:13px;color:var(--ink);opacity:.75;margin:5px 0 0;line-height:1.6}
+  .slide .note{font-size:12.5px;color:var(--notes);margin:8px 0 0;padding-left:10px;border-left:2px solid var(--line);line-height:1.6}
+  .slide .note b{font-weight:600;text-transform:uppercase;letter-spacing:.8px;font-size:10px;color:var(--muted)}
+  .legend{font-size:11.5px;color:var(--muted);margin-top:14px;line-height:1.9}
+
+  /* ---------- PRESENTER CONSOLE (this window, while the student window is shared) ---------- */
+  #console{position:fixed;inset:0;background:var(--bone);display:none;flex-direction:column;z-index:50}
+  #console.on{display:flex}
+  .cTop{display:flex;justify-content:space-between;align-items:center;padding:14px 26px;border-bottom:1px solid var(--line)}
+  .cTop .ptimer{font-variant-numeric:tabular-nums;font-size:30px;font-weight:700}
+  .cTop .cnt{font-size:14px;color:var(--muted)}
+  .cMain{flex:1;display:flex;min-height:0}
+  .cPrev{flex:0 0 46%;padding:22px;display:flex;flex-direction:column;gap:12px;border-right:1px solid var(--line)}
+  .pvLabel{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);font-weight:600}
+  .pvBox{border:1px solid var(--line);background:#fff;overflow:hidden;position:relative;width:100%;aspect-ratio:16/9;border-radius:6px}
+  .cNext{font-size:14px;color:var(--muted)}
+  .cNext b{color:var(--ink);font-weight:600}
+  .cNotes{flex:1;padding:26px;overflow-y:auto}
+  .cNotes .nh{font-size:10px;text-transform:uppercase;letter-spacing:1.4px;color:var(--muted);font-weight:600;margin-bottom:12px}
+  .cNotes .nt{font-size:19px;line-height:1.6;color:var(--ink);max-width:640px}
+  .cNotes .nt p{margin:0 0 12px}
+  .cNotes .nt ul{margin:0 0 14px;padding-left:24px}
+  .cNotes .nt li{margin:5px 0}
+  .cNotes .nt:empty::before{content:"—"}
+  .cBot{display:flex;justify-content:space-between;align-items:center;padding:14px 26px;border-top:1px solid var(--line)}
+  .cBot button{background:var(--ink);border:1px solid var(--ink);color:var(--bone);border-radius:8px;padding:9px 18px;cursor:pointer;font-size:14px;margin-left:8px;font-family:inherit}
+  .cBot button.ghost{background:transparent;color:var(--ink)}
+  .shareTip{font-size:12px;color:var(--muted)}
+
+  @media print{
+    .dials,.bar,.hint,header p,.legend,.tabs,#console{display:none}
+    body{background:#fff;color:#000;height:auto;overflow:visible;display:block}
+    .slide{border-color:#bbb;background:#fff;color:#000}
+    .wrap{display:block}
+    .out{overflow:visible;display:block}
+    #slidesWrap{overflow:visible}
+  }
+</style>
+</head>
+<body>
+<header>
+  <div style="display:flex;align-items:center;gap:14px">
+    <img src="https://static.wixstatic.com/media/2d354d_b31143f17d0b49b08b0f3df8b49c78f3~mv2.png" alt="Unstucking Academy" style="height:34px;width:auto;display:block">
+    <h1>Capacity Builder — Session Builder</h1>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="panel dials">
+    <div class="dial"><label class="h">Anchor entry</label><div class="opts" id="senseOpts"></div></div>
+
+    <div class="dial sep"><label class="h">Practice 1</label>
+      <div class="vars" style="margin-top:0;border-top:none;padding-top:0" id="p1vars"></div>
+    </div>
+
+    <div class="dial sep"><label class="h">Practice 2</label>
+      <div class="opts" id="p2opts"></div>
+      <div class="vars" id="p2vars"></div>
+    </div>
+
+    <div class="dial sep"><label class="h">Practice 3</label>
+      <div class="opts" id="p3opts"></div>
+      <div class="vars" id="p3vars"></div>
+    </div>
+
+    <div class="randbar">
+      <button class="btn" style="width:100%" onclick="randomize()">🎲 Randomize Practices 2 &amp; 3</button>
+    </div>
+  </div>
+
+  <div id="splitter"></div>
+
+  <div class="panel out">
+    <p class="name" id="sName"></p>
+    <div class="flow" id="sAgenda"></div>
+    <div class="bar">
+      <button class="btn" onclick="startPresent()">▶ Present</button>
+      <button class="btn ghost" onclick="window.print()">Print / Save PDF</button>
+      <span class="count" id="slideCount"></span>
+    </div>
+    <div class="tabs" id="tabs"></div>
+    <div id="slidesWrap"><div id="slidesView"></div></div>
+  </div>
+</div>
+
+<!-- Presenter console (replaces builder while presenting; student window is separate) -->
+<div id="console">
+  <div class="cTop">
+    <span class="cnt" id="pCount"></span>
+  </div>
+  <div class="cMain">
+    <div class="cPrev">
+      <span class="pvLabel">Current slide</span>
+      <div class="pvBox" id="pvBox"></div>
+      <div class="cNext" id="cNext"></div>
+    </div>
+    <div class="cNotes">
+      <div class="nh">Presenter notes</div>
+      <div class="nt" id="cNotes"></div>
+    </div>
+  </div>
+  <div class="cBot">
+    <span class="shareTip">← → arrows · space = next · Esc = end</span>
+    <span>
+      <button class="ghost" onclick="pPrev(event)">← Prev</button>
+      <button onclick="pNext(event)">Next →</button>
+      <button class="ghost" onclick="endPresent()">End session</button>
+    </span>
+  </div>
+</div>
+
+<script>
+/*BEATS-START*/
+/* ---------- DIALS ---------- */
+const SENSES = {
+  touch:{label:"Touch"},            // deck "A" variant
+  sight:{label:"Sight"},            // deck "B" variant
+  sound:{label:"Sound"},
+  movement:{label:"Movement"},
+  imagination:{label:"Imagination"}
+};
+/* ordered easiest → hardest; chip layout follows this order */
+const SKILLS = {
+  anchoring:  {label:"Anchoring",            expect:"anchor into safety"},
+  imagery:    {label:"Imagery & Invitation", expect:"imagine & invite a non-safety emotion"},
+  obstacles:  {label:"Obstacles",            expect:"induce and work with Obstacles"},
+  balancing:  {label:"Balancing",            expect:"balance safety and defense"},
+  pendulating:{label:"Pendulating",          expect:"pendulate safety and defense"}
+};
+/* Description elements — chosen per practice (descOn + delems on p2/p3).
+   Context-aware phrasing: object vs safety vs defense. */
+const DESC_LABELS={color:"Color",shape:"Shape",temp:"Temperature",texture:"Texture",sound:"Sound",doing:"Doing"};
+function descBeats(P,ctx,sense,v){
+  const b=mkq(P),B=[];
+  let keys;
+  if(ctx==="defense"){ if(!v.descOn) return B; keys=v.delems; }
+  else keys=["color","shape","temp","texture","doing"]; // safety & object: always the full deck sequence
+  keys.forEach(k=>{
+    if(k==="color"){
+      if(ctx==="object"&&sense==="sound") B.push(b("What pitch is it?","High or low? Or somewhere in between?"));
+      else if(ctx==="object"&&sense==="movement") B.push(b("What pace is it?","Slow or quick? Or somewhere in between?"));
+      else B.push(b(ctx==="safety"?"What color is your safety?":"What color is it?"));
+    }
+    if(k==="shape"){
+      if(ctx==="object"&&sense==="sound") B.push(b("Is it thin or full?","Sparse or rich? Simple or layered?"));
+      else if(ctx==="object"&&sense==="movement") B.push(b("How big is the movement?","Small or large? Subtle or full?"));
+      else B.push(b(ctx==="safety"?"What shape is your safety?":"What shape is it?"));
+    }
+    if(k==="temp"){
+      if(ctx==="object"){
+        if(sense==="sight")      B.push(b("What brightness is it?"));
+        else if(sense==="sound") B.push(b("What volume is it?","Loud or soft? Or somewhere between?"));
+        else if(sense==="movement") B.push(b("What temperature is it?","Any warmth building?"));
+        else                     B.push(b("What temperature is it?"));
+      } else B.push(b(ctx==="safety"?"What temperature is your safety?":"What temperature is it?"));
+    }
+    if(k==="texture"){
+      if(ctx==="object"&&sense==="sound") B.push(b("What texture does it have?","Smooth, rough, sharp, soft?"));
+      else if(ctx==="object"&&sense==="movement") B.push(b("What texture does it have?","Fluid or stiff? Smooth or jerky?"));
+      else B.push(b(ctx==="safety"?"What texture is your safety?":"What texture is it?"));
+    }
+    if(k==="sound")   B.push(b(ctx==="object"?"What sound does it make?":"Does it have a sound?"));
+    if(k==="doing"&&ctx!=="object") B.push(b("What is it doing?","Is there movement to it or not?"));
+  });
+  return B;
+}
+const OBSTACLE_STATEMENTS = [
+  "“I’m capable of achieving my goals.”","“I deserve to get unstuck.”","“My feelings are a normal result of my life context.”","“I am worthy of making change.”",
+  "“My feelings are important.”","“I have everything I need within me.”","“I am worthy of acceptance.”","“I am capable of creating positive change.”",
+  "“I am enough as I am.”","“I’m allowed to take up space.”","“I deserve kindness.”","“My needs matter.”",
+  "“It’s okay to lower my defenses.”","“I can trust myself.”","“I’m allowed to feel safe.”","“Things can get better for me.”"
+];
+function pickObstacles(n){
+  const a=OBSTACLE_STATEMENTS.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a.slice(0,n);
+}
+
+/* ---------- STATE ---------- */
+let st = {
+  sense:"touch",
+  p1:{emo:false},
+  p2:{skill:"balancing",  holdwatch:false, dur:30, pend:4, pendSec:10, skip:false,
+      descSafety:true, descOn:false, delems:["color","shape","temp","texture","doing"]},
+  p3:{skill:"pendulating",holdwatch:true,  dur:15, pend:4, pendSec:10, skip:false,
+      descSafety:true, descOn:true,  delems:["color","shape","temp","texture","doing"]}
+};
+
+/* ---------- BEAT MODEL ----------
+   style: "title" (session title) | "ptitle" (practice title) | "info" (header + on-slide body) | "q" (centered question)
+   h = student headline · body = on-slide text (info only) · tagline = small top-right label
+   note = PRESENTER NOTES (never shown to students) */
+function mkq(kind){ return (h,note,draft)=>({style:"q",kind,h,body:"",tagline:"",note:note||"",draft:!!draft,fixed:false}); }
+function info(h,body,note){ return {style:"info",kind:"",h,body:body||"",tagline:"",note:note||"",draft:false,fixed:true}; }
+
+const BREAK_MIN={anchoring:3,imagery:3,obstacles:3,balancing:5,pendulating:5}; // break minutes by skill; Mindfulness (P1)=2, passed directly
+function capacityCheck(breakMin){
+  const c=info("check your Capacity:",
+    "1. Intolerable distress<br>2. Curiosity turns into evaluation<br>3. Losing connection with your breath<br>4. Intrusive cognitions"+
+    "<br><br>Ask yourself:<br>– What do I need right now?<br>– Do I genuinely want to continue?<br>– Does my body genuinely want to continue?");
+  if(breakMin) c.breakMin=breakMin;
+  return c;
+}
+
+const BREATH_NOTE_FULL = "Check in with the natural ins and outs of your breath. How is your body naturally breathing right now? Don’t change your breathing, just notice it. If it changes by itself because you’ve paid attention to it, that’s fine. — Chest or belly? Full or shallow? Tense or relaxed?";
+const BREATH_NOTE_SHORT = "Not controlling. — Chest or belly? Full or shallow? Tense or relaxed?";
+const HEAR_NOTE = "Anything? Silence? Inside the room… what do you hear? Outside the room… what do you hear?";
+
+/* ---------- THE ANCHORING LADDER (opens P2 and P3, per the decks) ---------- */
+function ladderBeats(P, sense, o, v){ // o = {rate}
+  const b = mkq(P), B = [];
+  if(sense==="touch"){
+    B.push(b("Identify one thing in your space."));
+    B.push(b("What do you hear?",HEAR_NOTE));
+    B.push(b("How is your body breathing?",BREATH_NOTE_FULL));
+  } else if(sense==="sight"){
+    B.push(b("Let your eyes gaze however they like."));
+    B.push(b("What do you hear?",HEAR_NOTE));
+    B.push(b("How is your body breathing?",BREATH_NOTE_FULL));
+  } else if(sense==="sound"){
+    B.push(b("Notice the sounds outside your space.","Beyond the room — what reaches you from further away?"));
+    B.push(b("Now bring your hearing inside your space.","Right around you — what’s here, close by?"));
+    B.push(b("Notice what comes and goes.","A bird, a voice, a passing car — sounds that pop in, then fade. Here, then gone."));
+    B.push(b("Notice what stays constant.","A hum, a fan, the AC — sound holding steady underneath the rest."));
+    B.push(b("Notice the silence too.","The spaces between sounds — the quiet they arrive into and leave behind."));
+    B.push(b("Let each sound be temporary.","Nothing to hold onto. One moment, then the next — sound is always passing through."));
+    B.push(b("How is your body breathing?",BREATH_NOTE_FULL));
+  } else if(sense==="movement"){
+    B.push(b("Begin to move, gently and on purpose.","Small and easy — you’re not performing. Just enough to feel it."));
+    B.push(b("Roll your ankles.","Slow, both directions. No strain."));
+    B.push(b("Roll your wrists.","Let your hands soften."));
+    B.push(b("Roll your shoulders.","Up, back, and down — let them drop."));
+    B.push(b("Roll your neck, slowly.","Small arcs, only where it feels good. Skip anything sharp."));
+    B.push(b("Let yourself stretch into whatever wants to lengthen.","Reach, or a slight side bend — just to the easy edge."));
+    B.push(b("Pause. Notice what lingers.","The sensation doesn’t stop the moment you do — feel it settle."));
+    B.push(b("How is your body breathing?",BREATH_NOTE_FULL));
+  } else if(sense==="imagination"){
+    B.push(b("Bring to mind a place where you feel at ease.","Real or imagined — a memory, or made up. Somewhere you’d like to be."));
+    B.push(b("Let your eyes be as they want."));
+    B.push(b("Let the place take shape.","Indoors or out? Day or night? Where are you in it?"));
+    B.push(b("Look around — what do you see?","Colors, light, what’s near and what’s far."));
+    B.push(b("What do you hear there?","Or is it quiet?"));
+    B.push(b("What do you feel there?","The air, the temperature, the ground beneath you."));
+    B.push(b("How is your body breathing?",BREATH_NOTE_FULL));
+  }
+  if(v.skill!=="imagery") B.push(b("Imagine & Invite anything else you may be feeling right now."));
+  if(sense==="touch"){
+    B.push(b("Focus on your one thing."));
+    B.push(b("Does it give you a sense of like or dislike?","What about it do you like?"));
+    B.push(b("What does it feel like on your skin?","Does it feel different on different parts of your hand? Fingertips? Palm? Knuckles? Wrist?"));
+  } else if(sense==="sight"){
+    B.push(b("Notice what your eyes are drawn towards."));
+    B.push(b("Does it give you a sense of like or dislike?","What about it do you like?"));
+    B.push(b("How do your eyes interact with it?","Let your eyes take your attention where they want."));
+  } else if(sense==="sound"){
+    B.push(b("Choose what to anchor on.","A group of sounds together, a sound that comes and goes, or a constant sound — whichever is easiest to stay with. Let that be your anchor."));
+    B.push(b("Does it give you a sense of like or dislike?","What about it do you like?"));
+    B.push(b("How does it arrive to you?","Steady or rhythmic? Close or distant? Does it pulse, or hold?"));
+  } else if(sense==="movement"){
+    B.push(b("Choose one movement to return to.","Whichever felt best, or most available — let that be your anchor."));
+    B.push(b("Does it give you a sense of like or dislike?","What about it do you like?"));
+    B.push(b("Make it bigger, smaller, or still.","You’re the one in control of it — notice that."));
+    B.push(b("What does the movement feel like in your body?","Where do you feel it most? In the joint, the muscle, the whole limb?"));
+  } else if(sense==="imagination"){
+    B.push(b("Let one part of the place hold your attention.","The detail or spot that feels best — let that be your anchor."));
+    B.push(b("Does it give you a sense of like or dislike?","What about it do you like?"));
+    B.push(b("Notice you can shift it.","Move closer, change the light, add or remove something — it’s yours."));
+  }
+  descBeats(P,"object",sense,v).forEach(x=>B.push(x));
+  B.push(b("As you mindfully experience it, how does it affect your breath?","Chest or belly? Full or shallow? Tense or relaxed?"));
+  B.push(b("As you mindfully experience it, how does it affect your posture?","Upright or collapsed? Energized or relaxed?"));
+  B.push(b("As you mindfully experience it, are you more or less likely to smile?","Let yourself smile if so."));
+  B.push(b("Do you feel more or less connection…?","…to the present? To your senses? Your breath? Your inner experience? — Check your capacity."));
+  B.push(b("What emotion word best fits your current safety experience?","Calm? Still? Playful? Joy? Curious? — “Something like…”"));
+  B.push(b("Notice how safety feels in your body generally.","Mobile or immobile? Heavy or light?"));
+  B.push(b("Notice how safety feels in your body specifically.","Is there one place in your body where this emotion is even more obvious? Coming from, or going to? Common areas: face, chest, and belly."));
+  B.push(b("How is your body breathing?",BREATH_NOTE_SHORT));
+  if(v.descSafety!==false) descBeats(P,"safety",sense,v).forEach(x=>B.push(x));
+  if(o.rate) B.push(b("On a scale of 0–10, what is your current level of safety?"));
+  return B;
+}
+
+const CURIOSITY = (P)=>mkq(P)("Do you feel interest or curiosity about your non-safety internal experiences?","You can say yes or no.");
+
+/* ---------- INVITING THE NON-SAFETY EMOTION ---------- */
+function inviteBeats(P){
+  const b = mkq(P);
+  return [
+    b("What is the non-safety emotion you would like to invite?","“I feel _____.”"),
+    b("Does it make sense you have this non-safety emotion based on your life context?"),
+    b("Is it okay for this non-safety emotion to be?","You can say yes or no."),
+    b("On a 0–10 scale, what is the intensity level of this non-safety emotion?"),
+    b("How does this non-safety emotion feel in your body generally?","Mobile or immobile? Heavy or light?"),
+    b("How does this non-safety emotion feel in your body specifically?","Is there one place in your body where this emotion is even more obvious? Coming from, or going to? Common areas: face, chest, and belly."),
+    b("How is your body breathing?","Check your capacity.")
+  ];
+}
+
+/* ---------- CLOSING OF EACH SKILL PRACTICE ---------- */
+function closingBeats(P, breakMin){
+  const b = mkq(P);
+  return [
+    b("Let your awareness begin to widen.","No rush. Let the practice settle as you come back."),
+    b("Reconnect to the external present moment.","If your eyes are closed, let them open when they’re ready. — What do you see? What do you hear?"),
+    b("Let your body move however feels good — or stay just as you are.","Stretch, shift, settle. If you’ve been moving, keep going."),
+    b("Take one intentional breath."),
+    b("Offer yourself something kind."),
+    capacityCheck(breakMin)
+  ];
+}
+
+/* ---------- PENDULATION SEQUENCE ---------- */
+function pendBeats(P, v){
+  const b = mkq(P), B = [];
+  if(v.skip){
+    B.push(b("Skip stones across the defense.","So light, so quick, it never pulls you under. Safety… touch… safety… touch.",true));
+    B.push(b("Bring your attention back to the safety experience.",null,true));
+    B.push(b("Has safety changed?",null,true));
+    return B;
+  }
+  const flat=!v.holdwatch;
+  const t=(sec)=>"~"+(flat?v.pendSec:sec)+" seconds";
+  B.push(b("Bring your attention back to the safety experience."));
+  B.push(b("Has safety changed?",t(10)));
+  B.push(b("Bring your attention back to the non-safety emotion."));
+  B.push(b("On a 0–10 scale, what is the intensity level of this non-safety emotion?"));
+  if(v.descOn) descBeats(P,"defense",st.sense,v).forEach(x=>B.push(x));
+  B.push(b("How is your body breathing?","Check your capacity."));
+  B.push(b("Bring your attention back to the safety experience.",t(6)));
+  B.push(b("Has safety changed?"));
+  B.push(b("Remind yourself that you’re literally safe."));
+  B.push(b("Bring your attention back to the non-safety experience."));
+  B.push(b("Has non-safety changed?",t(6)));
+  B.push(b("Bring your attention back to the safety experience."));
+  B.push(b("Has safety changed?",t(4)));
+  for(let i=4;i<=v.pend;i++){
+    if(flat){
+      B.push(b("And back to the non-safety experience.","~"+v.pendSec+" seconds"));
+      B.push(b("And back to safety.","~"+v.pendSec+" seconds"));
+    } else {
+      B.push(b("And back to defense, briefly.","~2 seconds"));
+      B.push(b("And back to safety, briefly.","~2 seconds"));
+    }
+  }
+  if(v.holdwatch) B.push(b("Hold the two. Remain open to potential shifts.","~"+v.dur+" seconds — Do they want to interact?"));
+  return B;
+}
+
+/* ---------- SKILL ASSEMBLERS ---------- */
+function ptitle(P,label,tagline,note,track){
+  return {style:"ptitle",kind:P,h:label,body:"",tagline:tagline||"",note:note||"",track:track||"defense",draft:false,fixed:false};
+}
+function skillBeats(P, v, sense){
+  const b = mkq(P), key = v.skill;
+  let B = [];
+  const tagLines=[];
+  if(key==="obstacles") tagLines.push("4 STATEMENTS");
+  if(v.descSafety) tagLines.push("DESCRIBING SAFETY");
+  if((key==="balancing"||key==="pendulating")&&v.descOn) tagLines.push("DESCRIBING DEFENSE");
+  if(key==="pendulating"&&v.skip) tagLines.push("SKIPPING STONES");
+  if((key==="balancing"||key==="pendulating")&&v.holdwatch) tagLines.push("HOLD & WATCH · ~"+v.dur+"S");
+  if(key==="pendulating"&&!v.skip) tagLines.push(v.pend+" PENDULATIONS"+(v.holdwatch?"":" · ~"+v.pendSec+"S"));
+  const TAG=tagLines.join("<br>");
+  const TRACK = key==="anchoring" ? "safety" : "defense";
+  if(key==="anchoring"){
+    B.push(ptitle(P,"Anchoring",TAG,"We will: anchor into safety.",TRACK));
+    B = B.concat(ladderBeats(P,sense,{rate:true},v));
+    B.push(CURIOSITY(P));
+  }
+  else if(key==="balancing"){
+    let we="We will: anchor into safety — balance safety and defense"+(v.descOn?" — describe defense":"")+(v.holdwatch?" — hold and watch for ~"+v.dur+" seconds":"")+".";
+    B.push(ptitle(P,"Balancing",TAG,we,TRACK));
+    B.push(b("Choose a non-safety emotion.","Present moment? Recent past? Upcoming? Lingering? — Remain open to Obstacles."));
+    B = B.concat(ladderBeats(P,sense,{rate:true},v));
+    B.push(CURIOSITY(P));
+    B = B.concat(inviteBeats(P));
+    if(v.descOn) descBeats(P,"defense",st.sense,v).forEach(x=>B.push(x));
+    B.push(b("Bring your attention back to the safety experience."));
+    B.push(b("Has safety changed?"));
+    if(v.holdwatch) B.push(b("Hold the two.","~"+v.dur+" seconds — Do they want to interact?"));
+  }
+  else if(key==="pendulating"){
+    let we="We will: pendulate "+v.pend+" times"+(v.holdwatch?", decreasing in time spent on each":", ~"+v.pendSec+" seconds each")+(v.descOn?" — describe defense":"")+(v.holdwatch?" — hold and watch safety and defense for ~"+v.dur+" seconds, open to the two interacting (or not)":"")+".";
+    B.push(ptitle(P,"Pendulating",TAG,we,TRACK));
+    B.push(b("Choose a non-safety emotion.","Present moment? Recent past? Upcoming? Lingering? — Remain open to Obstacles."));
+    B = B.concat(ladderBeats(P,sense,{rate:false},v));
+    B.push(CURIOSITY(P));
+    B = B.concat(inviteBeats(P));
+    B = B.concat(pendBeats(P,v));
+  }
+  else if(key==="imagery"){ // from Self-Regulation Simplified, Imagery & Invitation Practices 1–2
+    B.push(ptitle(P,"Imagery & Invitation",TAG,"We will: anchor into safety — imagine & invite a non-safety emotion.",TRACK));
+    B.push(b("Choose a non-safety emotion.","Present moment? Recent past? Upcoming? Lingering? — Remain open to Obstacles."));
+    B = B.concat(ladderBeats(P,sense,{rate:true},v));
+    B.push(CURIOSITY(P));
+    B.push(b("What is one non-safety experience you can Validate?","“I do feel _____.” / “I don’t like it, but I feel _____.” / “Yeah, fine, I feel _____.”"));
+    B.push(b("Normalize that experience.","“I feel _____, which makes sense based on my life context.”"));
+    B.push(b("What does _____ look like?","“_____ looks like _____.”"));
+    B.push(b("Where is _____?"));
+    B.push(b("What is _____ doing?"));
+    B.push(b("Invite _____ to be with you while you reconnect with the external world."));
+  }
+  else if(key==="obstacles"){ // from Self-Regulation Simplified, Obstacles Practices 1–2
+    B.push(ptitle(P,"Obstacles",TAG,
+      "We will: anchor into safety — induce Obstacles through four statements — Validate, Normalize, Imagine & Invite the Obstacle.",TRACK));
+    B = B.concat(ladderBeats(P,sense,{rate:true},v));
+    B.push(b("4 statements.","Check your capacity."));
+    pickObstacles(4).forEach(s=>B.push(b(s,"Notice what surfaces as you say it to yourself.")));
+    B.push(b("Validate the Obstacle."));
+    B.push(b("Normalize the Obstacle."));
+    B.push(b("Imagine.","What does it look like? Where is it? What is it doing?"));
+    B.push(b("Invite the Obstacle to be with you while you reconnect with the external world."));
+  }
+  B = B.concat(closingBeats(P, BREAK_MIN[v.skill]||3));
+  return B;
+}
+
+/* ---------- PRACTICE 1 — MINDFULNESS ---------- */
+function practice1Beats(){
+  const b = mkq("Practice 1"), B = [];
+  B.push(ptitle("Practice 1","Mindfulness","","Brief, simple mindfulness — connect to the present moment.","safety"));
+  B.push(b("On a scale of 0–10, what is your current level of safety?"));
+  B.push(b("How is your body breathing?",BREATH_NOTE_FULL));
+  B.push(b("What do you hear?",HEAR_NOTE));
+  B.push(b("How is your body breathing?",BREATH_NOTE_SHORT));
+  B.push(b("What do you touch?","We’ll start with your entire body. What is it you’re sitting, standing, laying, or leaning on? Can you feel its firmness? Or is it soft? Does it let you sink into it? What can you feel specifically on your skin? The air? The fabric of your clothes? Something you can hold onto nearby?"));
+  B.push(b("How is your body breathing?",BREATH_NOTE_SHORT));
+  B.push(b("What do you see?","Open your eyes if they’re closed, as they are ready to open. You don’t need to do anything special — just look where they want you to look. If your neck wants to move to help your eyes see more, let your neck and eyes work together. Is there one thing that is pulling at your eyes? What’s its shape? Let your eyes trace the edges. Notice how the light from the room touches it. And the shadows it creates."));
+  B.push(b("How is your body breathing?",BREATH_NOTE_SHORT));
+  B.push(b("On a scale of 0–10, what is your current level of safety?"));
+  if(st.p1.emo){
+    B.push(b("Is there an emotion you’re holding onto?"));
+    B.push(b("Invite it to be with you."));
+  }
+  B.push(capacityCheck(2));
+  return B;
+}
+
+/* ---------- NAMES ---------- */
+function skillName(v){ return SKILLS[v.skill].label; }
+function sessionName(){
+  return "Capacity Builder — "+SENSES[st.sense].label+" · "+skillName(st.p2)+" → "+skillName(st.p3);
+}
+function agendaLine(){
+  return "1 · Mindfulness   2 · "+skillName(st.p2)+"   3 · "+skillName(st.p3);
+}
+
+/* ---------- FULL SESSION ---------- */
+const TABS={intro:"Intro",p1:"Practice 1",p2:"Practice 2",p3:"Practice 3",closing:"Outro"};
+function buildBeats(){
+  let B=[];
+  const sec=(name,from)=>{for(let i=from;i<B.length;i++)B[i].section=name;};
+  const trk=k=>k==="anchoring"?"safety":"defense";
+  const steps=[["Mindfulness","safety"],[skillName(st.p2),trk(st.p2.skill)],[skillName(st.p3),trk(st.p3.skill)]]
+    .map((st_,i)=>'<span class="sstep '+st_[1]+'"><span class="snum">'+(i+1)+'</span>'+st_[0]+'</span>')
+    .join('<span class="sarr">→</span>');
+  B.push({style:"title",kind:"",h:"Nervous System<br>Capacity Builder",body:"",
+    tagline:'<div class="sflow">'+steps+'</div>',
+    note:"Session: "+sessionName(),draft:false,fixed:true});
+  B.push(info("disclaimer",
+    "Capacity Builder is not:<br>– individual or group therapy<br>– individual or group coaching<br>– personal life advice<br>– a replacement for appropriate professional services"));
+  B.push(info("participation",
+    "No pressure to participate<br>Use the chat if you’d like to share a reflection<br>– focus on the present moment"));
+  B.push(info("what to expect",
+    "Over three practices, you will:<br>– mindfully connect to the present moment (~5min)<br>– "+SKILLS[st.p2.skill].expect+" (~10min)<br>– "+SKILLS[st.p3.skill].expect+" (~15min)<br><br>Regular Capacity prompts within and between practices"));
+  B.push(info("Capacity",
+    "Capacity is your body’s ability to invite and maintain connection with defensive activation<br>– “window of tolerance”<br>– “distress tolerance”<br>– vagal brake strength"));
+  B.push(info("Capacity & safety",
+    "These are the absolute priority<br>Work within your capacity and challenge level<br>Safety is the priority to begin, maintain, and end"));
+  B.push(info("touch the edge of Capacity",
+    "To grow Capacity, you will need to anchor into safety, then gently touch the “edge” of what your system can tolerate<br>– mild to moderate activation of defense<br>– still anchored in safety"));
+  B.push(info("touch the edge of Capacity",
+    "Think of Capacity Builder as nervous system reps in the Emotional Gym<br>– a workout can be a good experience, can build strength, but it can also go too far…"));
+  B.push(info("4 signs of losing capacity",
+    "1. Intolerable distress<br>2. Curiosity turns into evaluation<br>3. Losing connection with your breath<br>4. Intrusive cognitions"));
+  B.push(info("If you have lost Capacity:",
+    "You have permission to pause or stop<br>It’s completely okay to proactively recognize you’re done and choose to stop<br>– You may stop between practices.<br>– You may stop during practices."));
+  B.push(info("If you have lost Capacity:",
+    "Depending on intensity:<br>– stop the practice<br>– cope through effective means<br>– move, fidget, flex<br>– co-regulate<br>– focus on safety, external or internal<br>– exit your space<br>– get air, water, rest…"));
+  B.push(info("If you have lost Capacity:",
+    "Losing Capacity is not failure.<br>– everyone has a limit in anything they do<br>– limits grow from imperfect practices"));
+  B.push(info("questions or concerns?"));
+  sec("intro",0);
+  let m=B.length; practice1Beats().forEach(x=>B.push(x)); sec("p1",m);
+  m=B.length; skillBeats("Practice 2",st.p2,st.sense).forEach(x=>B.push(x)); sec("p2",m);
+  m=B.length; skillBeats("Practice 3",st.p3,st.sense).forEach(x=>B.push(x)); sec("p3",m);
+  m=B.length;
+  B.push(info("Capacity building","",
+    "That was one! Great job. Keep practicing on your own through the Unstucking Academy pre-recorded meditations, simple mindfulness practices, and acknowledging discomfort. Always listen to your capacity. Show up to the next one to keep growing your capacity!"));
+  B.push(info("take care of yourself",
+    "Your system just did some work. Give it what it needs:<br>– move your body<br>– drink some water<br>– rest<br>– get outside, get air"));
+  B.push(info("Upcoming Events:",
+    "Check the Unstucking Academy Calendar:<br>– Capacity Builders<br>– Mindful Moments<br>– Q&amp;As<br>– Cohort announcements"));
+  sec("closing",m);
+  return B;
+}
+/*BEATS-END*/
+
+/* ---------- STUDENT SLIDE MARKUP (1024×768 canvas, scaled to fit) ---------- */
+function breakClockHTML(b){
+  if(!b.breakMin) return "";
+  return '<div class="breakclock"><span class="bl">break</span><span class="bt" data-secs="'+(b.breakMin*60)+'">'+b.breakMin+':00</span></div>';
+}
+function studentSlideHTML(b){
+  const foot='<div class="foot"><img class="logo" src="https://static.wixstatic.com/media/2d354d_af56ea98dfab423d908b57ed57a01937~mv2.png" alt="Unstucking Academy"><span class="byline">JUSTIN SUNSERI, STUCKNOTBROKEN.COM</span></div>';
+  if(b.style==="title")
+    return '<div class="s title"><h1>'+b.h+'</h1>'+(b.tagline||"")+foot+'</div>';
+  if(b.style==="ptitle")
+    return '<div class="s title pt"><div class="eyebrow '+(b.track||"")+'">'+b.kind+'</div><h1>'+b.h+'</h1>'+
+      (b.tagline?'<div class="tagline">'+b.tagline+'</div>':"")+foot+'</div>';
+  if(b.style==="info")
+    return '<div class="s info"><h2>'+b.h+'</h2>'+(b.body?'<div class="ibody">'+b.body+'</div>':"")+breakClockHTML(b)+'</div>';
+  return '<div class="s q"><div class="qq">'+b.h+'</div></div>';
+}
+/* Fluid slide sections — swiss grid, container-query units (cqw/cqh), so each
+   slide lays itself out for whatever size its container is: the full student
+   tab OR the small console preview. No fixed canvas, no transform scaling. */
+const STUDENT_CSS = `
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@200;400;500;600;700&display=swap');
+  .cbframe{position:absolute;inset:0;container-type:size;background:#FAF9F5;color:#1a1f2a;
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Helvetica,Arial,sans-serif;overflow:hidden}
+  .cbframe .s{position:absolute;inset:0}
+  .cbframe .s.q{display:flex;align-items:center;justify-content:center;text-align:center}
+  .cbframe .s.q .qq{font-size:clamp(22px,3.6cqw,64px);font-weight:500;line-height:1.3;letter-spacing:-.015em;max-width:68cqw;padding:0 6cqw}
+  .cbframe .s.info h2{position:absolute;top:7cqh;left:6.25cqw;right:6.25cqw;margin:0;
+    font-size:clamp(20px,3cqw,54px);font-weight:600;letter-spacing:-.02em}
+  .cbframe .s.info .ibody{position:absolute;top:19cqh;left:6.25cqw;right:14cqw;bottom:7cqh;overflow:hidden;
+    font-size:clamp(13px,1.65cqw,28px);font-weight:400;line-height:1.6}
+  .cbframe .s.title h1{margin:0;
+    font-size:clamp(30px,5.3cqw,96px);font-weight:700;line-height:1.08;letter-spacing:-.04em;max-width:70cqw}
+  .cbframe .s.title{padding:26cqh 6.25cqw 0}
+  .cbframe .s.title .eyebrow{font-size:clamp(9px,1.1cqw,18px);font-weight:400;letter-spacing:.18em;
+    text-transform:uppercase;margin-bottom:2.4cqh}
+  .cbframe .eyebrow.safety{color:#3b6ea5}
+  .cbframe .eyebrow.defense{color:#c9682a}
+  .cbframe .s.title.pt h1{font-weight:500;text-transform:lowercase}
+  .cbframe .sflow{display:flex;gap:1.4cqw;align-items:center;margin-top:4cqh;flex-wrap:wrap}
+  .cbframe .sflow .sstep{display:flex;align-items:center;gap:.9cqw;border:1px solid #1a1f2a40;background:transparent;
+    border-radius:999px;padding:.9cqh 1.7cqw .9cqh .8cqw;font-size:clamp(11px,1.4cqw,21px);font-weight:500;white-space:nowrap}
+  .cbframe .sflow .snum{width:2.3cqw;height:2.3cqw;min-width:19px;min-height:19px;border-radius:50%;
+    background:#1a1f2a;color:#FAF9F5;display:flex;align-items:center;justify-content:center;
+    font-size:clamp(8px,1cqw,14px);font-weight:700}
+  .cbframe .sflow .sstep.safety{border-color:#3b6ea58c}
+  .cbframe .sflow .sstep.safety .snum{background:#3b6ea5}
+  .cbframe .sflow .sstep.defense{border-color:#c9682a8c}
+  .cbframe .sflow .sstep.defense .snum{background:#c9682a}
+  .cbframe .sflow .sarr{color:#8a877e;font-size:clamp(12px,1.6cqw,24px)}
+  .cbframe .s.title .tagline{margin-top:3.4cqh;
+    font-size:clamp(9px,1.1cqw,18px);font-weight:400;letter-spacing:.08em;line-height:1.9;text-transform:uppercase;color:#5b5e66}
+  .cbframe .s.title .foot{position:absolute;left:6.25cqw;bottom:6cqh;
+    display:flex;flex-direction:column;gap:1.4cqh;align-items:flex-start}
+  .cbframe .s.title .logo{height:clamp(22px,5.5cqh,64px);width:auto;display:block}
+  .cbframe .s.title .byline{font-size:clamp(7px,.9cqw,14px);letter-spacing:.12em;color:#8a877e;text-transform:uppercase}
+  .cbframe .breakclock{position:absolute;right:5cqw;bottom:5cqh;display:flex;flex-direction:column;align-items:flex-end;gap:.4cqh;color:#8a877e}
+  .cbframe .breakclock .bl{font-size:clamp(7px,.9cqw,13px);letter-spacing:.16em;text-transform:uppercase;font-weight:400;opacity:.7}
+  .cbframe .breakclock .bt{font-size:clamp(13px,1.9cqw,30px);font-weight:400;font-variant-numeric:tabular-nums;opacity:.85}
+`;
+const STUDENT_PAGE_CSS = `
+  html,body{margin:0;height:100%;overflow:hidden;background:#FAF9F5}
+`;
+
+/* ---------- CONTROLS ---------- */
+function chips(id, obj, get, set, invert){
+  const el=document.getElementById(id); el.innerHTML="";
+  Object.keys(obj).forEach(k=>{
+    const d=document.createElement("div");
+    d.className="opt"+(get()===k?(invert?" sel":" check"):"");
+    d.innerHTML=obj[k].label+(obj[k].draft?' <span class="dr">draft</span>':"");
+    d.onclick=()=>{ set(k); render(); };
+    el.appendChild(d);
+  });
+}
+function tog(pr,key,label,extra){
+  return '<label class="toggle"><input type="checkbox" '+(st[pr][key]?"checked":"")+
+    ' onchange="st.'+pr+'.'+key+'=this.checked;render()"> '+label+(extra?' <span class="dr">'+extra+'</span>':"")+'</label>';
+}
+function miniChips(pr,key,vals,label,suffix){
+  let h='<div class="mini"><span>'+label+'</span>';
+  vals.forEach(x=>{
+    h+='<span class="mopt'+(st[pr][key]===x?" sel":"")+'" onclick="st.'+pr+'.'+key+'='+x+';render()">'+x+(suffix||"")+'</span>';
+  });
+  return h+'</div>';
+}
+function delemsHTML(pr){
+  const v=st[pr];
+  let h='<div class="opts" style="margin-top:8px">';
+  Object.keys(DESC_LABELS).forEach(k=>{
+    const on=v.delems.includes(k);
+    h+='<span class="opt'+(on?' check':'')+'" style="padding:4px 9px;font-size:12px" onclick="toggleDelem(\''+pr+'\',\''+k+'\')">'+DESC_LABELS[k]+'</span>';
+  });
+  h+='<span class="opt" style="padding:4px 9px;font-size:12px" onclick="randomizeDelems(\''+pr+'\')">🎲</span></div>';
+  return h;
+}
+function toggleDelem(pr,k){
+  const a=st[pr].delems, i=a.indexOf(k);
+  if(i>=0)a.splice(i,1); else a.push(k);
+  render();
+}
+function randomizeDelems(pr){
+  const keys=Object.keys(DESC_LABELS);
+  for(let i=keys.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [keys[i],keys[j]]=[keys[j],keys[i]]; }
+  st[pr].delems=keys.slice(0, 2+Math.floor(Math.random()*(keys.length-1)));
+  render();
+}
+function varsHTML(pr){
+  const v=st[pr], s=v.skill; let h="";
+  h+=tog(pr,"descSafety","Describe safety");
+  if(s==="balancing"||s==="pendulating"){
+    h+=tog(pr,"descOn","Describe defense");
+    if(v.descOn) h+=delemsHTML(pr);
+    h+=tog(pr,"holdwatch","Hold &amp; watch");
+    if(v.holdwatch) h+=miniChips(pr,"dur",[15,30,45,60,90,120],"Hold","s");
+  }
+  if(s==="pendulating"){
+    h+=miniChips(pr,"pend",[3,4,5,6],"Pendulations","");
+    if(!v.holdwatch) h+=miniChips(pr,"pendSec",[5,10,15,20,30],"Seconds","s");
+    h+=tog(pr,"skip","Skipping stones","draft");
+  }
+  return h;
+}
+
+/* ---------- RANDOMIZE P2 & P3 ---------- */
+function randomize(){
+  const keys=Object.keys(SKILLS);
+  const pick=a=>a[Math.floor(Math.random()*a.length)];
+  const coin=()=>Math.random()<0.5;
+  st.p2.skill=pick(keys);
+  let k3=pick(keys); while(k3===st.p2.skill) k3=pick(keys);
+  st.p3.skill=k3;
+  ["p2","p3"].forEach(pr=>{
+    const v=st[pr];
+    v.holdwatch=coin(); v.dur=pick([15,30,45,60,90,120]);
+    v.pend=pick([3,4,5,6]); v.pendSec=pick([5,10,15,20,30]); v.skip=false;
+    v.descOn=coin();
+    const keys=Object.keys(DESC_LABELS);
+    for(let i=keys.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [keys[i],keys[j]]=[keys[j],keys[i]]; }
+    v.delems=keys.slice(0, 2+Math.floor(Math.random()*(keys.length-1)));
+  });
+  render();
+}
+
+/* ---------- BUILDER VIEW ---------- */
+let curTab="p1";
+function slidesHTML(beats){
+  let html="";
+  beats.forEach(b=>{
+    const cls="slide "+(b.fixed?"fixedc":"")+(b.draft?" draftcard":"");
+    const tag=(b.fixed?"Container · fixed":"Changes with dials")+(b.kind?" · "+b.kind:"")+(b.draft?' · <span class="dtag">draft — not from deck</span>':"");
+    const head=(b.style==="ptitle")?(b.kind+": "+b.h):b.h;
+    html+='<div class="'+cls+'"><div class="tag">'+tag+'</div>'+
+      '<p class="stu">'+head+'</p>'+
+      (b.body?'<p class="bod">'+b.body+'</p>':"")+
+      (b.tagline&&b.style!=="title"?'<p class="bod" style="text-transform:uppercase;font-size:11px;letter-spacing:1px">'+b.tagline+'</p>':"")+
+      (b.note?'<p class="note"><b>presenter notes</b> &nbsp;'+b.note+'</p>':"")+
+      '</div>';
+  });
+  return html;
+}
+function render(){
+  chips("senseOpts",SENSES,()=>st.sense,k=>st.sense=k,false);
+  chips("p2opts",SKILLS,()=>st.p2.skill,k=>st.p2.skill=k,true);
+  chips("p3opts",SKILLS,()=>st.p3.skill,k=>st.p3.skill=k,true);
+  document.getElementById("p1vars").innerHTML=tog("p1","emo","Emotion check-in");
+  document.getElementById("p2vars").innerHTML=varsHTML("p2");
+  document.getElementById("p3vars").innerHTML=varsHTML("p3");
+  document.getElementById("sName").textContent=sessionName();
+  document.getElementById("sAgenda").innerHTML=
+    ["Mindfulness",skillName(st.p2),skillName(st.p3)]
+    .map((n,i)=>'<span class="step"><span class="num">'+(i+1)+'</span>'+n+'</span>')
+    .join('<span class="arr">→</span>');
+  const beats=buildBeats();
+  document.getElementById("slideCount").textContent=beats.length+" slides total";
+  const tabsEl=document.getElementById("tabs"); tabsEl.innerHTML="";
+  Object.keys(TABS).forEach(k=>{
+    const d=document.createElement("div");
+    d.className="tab"+(curTab===k?" sel":"");
+    d.innerHTML=TABS[k];
+    d.onclick=()=>{ curTab=k; render(); };
+    tabsEl.appendChild(d);
+  });
+  document.getElementById("slidesView").innerHTML=slidesHTML(beats.filter(b=>b.section===curTab));
+}
+window.addEventListener("beforeprint",()=>{ if(!IS_STUDENT) document.getElementById("slidesView").innerHTML=slidesHTML(buildBeats()); });
+window.addEventListener("afterprint",()=>{ if(!IS_STUDENT) render(); });
+
+/* ---------- PRESENT: student window + presenter console ----------
+   The pop-up loads THIS file with ?student=1, so it has a real title
+   ("Capacity Builder — Slides") instead of about:blank. The two windows
+   talk via postMessage. */
+const IS_STUDENT = /[?&]student=1/.test(location.search);
+let pSlides=[], pIdx=0, sw=null;
+function studentURL(){ return location.href.split("#")[0].split("?")[0]+"?student=1"; }
+function openStudentWindow(){
+  // pop-up window. In Circle: Share screen → Window → "Capacity Builder — Slides".
+  sw=window.open(studentURL(),"cb_student","width=1280,height=800");
+  if(!sw){ alert("Pop-up blocked — allow pop-ups for this file so the student window can open."); return false; }
+  return true;
+}
+window.addEventListener("message",e=>{
+  const d=e.data||{};
+  if(IS_STUDENT){
+    if(d.cbSlide!==undefined){
+      const f=document.getElementById("frame");
+      if(f){f.innerHTML=d.cbSlide; startBreakClock(f);}
+    }
+    return;
+  }
+  if(d.cbReady) pRender();
+  else if(d.cbNav===1) pNext();
+  else if(d.cbNav===-1) pPrev();
+});
+function bootStudent(){
+  document.title="Capacity Builder — Slides";
+  const css=document.createElement("style"); css.textContent=STUDENT_PAGE_CSS+STUDENT_CSS;
+  document.head.appendChild(css);
+  document.body.innerHTML='<div class="cbframe" id="frame"></div>';
+  document.addEventListener("keydown",e=>{
+    if(!window.opener)return;
+    if(e.key==="ArrowRight"||e.key===" ")window.opener.postMessage({cbNav:1},"*");
+    else if(e.key==="ArrowLeft")window.opener.postMessage({cbNav:-1},"*");
+  });
+  if(window.opener)window.opener.postMessage({cbReady:1},"*");
+}
+function fmtNote(n){
+  if(!n) return "";
+  let html="";
+  n.split(/<br>| — /).forEach(part=>{
+    part=part.trim(); if(!part) return;
+    const qs=part.match(/[^?]+\?/g);
+    const onlyQs=qs && qs.join("").replace(/\s/g,"")===part.replace(/\s/g,"");
+    if(qs && qs.length>1 && onlyQs && qs.every(q=>q.trim().length<48)){
+      html+='<ul>'+qs.map(q=>'<li>'+q.trim()+'</li>').join("")+'</ul>';
+    } else {
+      html+='<p>'+part+'</p>';
+    }
+  });
+  return html;
+}
+let _breakInt=null;
+function startBreakClock(root){
+  if(_breakInt){clearInterval(_breakInt);_breakInt=null;}
+  if(!root) return;
+  const el=root.querySelector(".breakclock .bt");
+  if(!el) return;
+  const total=parseInt(el.getAttribute("data-secs"),10)||0;
+  const end=Date.now()+total*1000;
+  const upd=()=>{
+    let rem=Math.round((end-Date.now())/1000); if(rem<0)rem=0;
+    el.textContent=Math.floor(rem/60)+":"+String(rem%60).padStart(2,"0");
+    if(rem<=0){clearInterval(_breakInt);_breakInt=null;}
+  };
+  upd(); _breakInt=setInterval(upd,250);
+}
+function pRender(){
+  if(!pSlides.length)return;
+  const b=pSlides[pIdx];
+  if(sw && !sw.closed){
+    sw.postMessage({cbSlide:studentSlideHTML(b)},"*");
+  }
+  // presenter console — same fluid slide markup, sized by its own container
+  document.getElementById("pvBox").innerHTML='<div class="cbframe">'+studentSlideHTML(b)+'</div>';
+  startBreakClock(document.getElementById("pvBox"));
+  document.getElementById("cNotes").innerHTML=fmtNote(b.note);
+  const nxt=pSlides[pIdx+1];
+  document.getElementById("cNext").innerHTML=nxt?("Next: <b>"+(nxt.style==="ptitle"?nxt.kind+": "+nxt.h:nxt.h.replace(/<br>/g," "))+"</b>"):"Next: — end of session —";
+  document.getElementById("pCount").textContent=(b.kind||"");
+}
+function startPresent(){
+  if(!openStudentWindow())return;
+  if(t0===null)t0=Date.now();
+  pSlides=buildBeats();
+  pIdx=Math.max(0,pSlides.findIndex(b=>b.section===curTab));
+  document.getElementById("console").classList.add("on");
+  tick(); pRender();
+}
+function endPresent(){
+  document.getElementById("console").classList.remove("on");
+  if(sw && !sw.closed) sw.close();
+  sw=null;
+}
+function pNext(e){ if(e)e.stopPropagation(); if(pIdx<pSlides.length-1){pIdx++;pRender();} }
+function pPrev(e){ if(e)e.stopPropagation(); if(pIdx>0){pIdx--;pRender();} }
+document.addEventListener("keydown",e=>{
+  if(IS_STUDENT)return;
+  const c=document.getElementById("console");
+  if(!c||!c.classList.contains("on"))return;
+  if(e.key==="ArrowRight"||e.key===" ")pNext();
+  else if(e.key==="ArrowLeft")pPrev();
+  else if(e.key==="Escape")endPresent();
+});
+
+/* ---------- PRESENT-MODE TIMER ---------- */
+let t0=null;
+function tick(){}
+
+/* ---------- DRAGGABLE LEFT MENU ---------- */
+(function(){
+  const sp=document.getElementById("splitter");
+  if(!sp) return;
+  const dials=document.querySelector(".dials");
+  let dragging=false;
+  sp.addEventListener("pointerdown",e=>{
+    dragging=true; sp.classList.add("dragging"); sp.setPointerCapture(e.pointerId);
+    document.body.style.userSelect="none";
+  });
+  sp.addEventListener("pointermove",e=>{
+    if(!dragging) return;
+    const w=Math.max(240, Math.min(620, e.clientX - dials.getBoundingClientRect().left));
+    dials.style.flex="0 0 "+w+"px"; dials.style.width=w+"px";
+  });
+  const stop=()=>{ dragging=false; sp.classList.remove("dragging"); document.body.style.userSelect=""; };
+  sp.addEventListener("pointerup",stop); sp.addEventListener("pointercancel",stop);
+})();
+
+if(IS_STUDENT){ bootStudent(); }
+else {
+  const css=document.createElement("style"); css.textContent=STUDENT_CSS; // for the console preview
+  document.head.appendChild(css);
+  render();
+}
+</script>
+</body>
+</html>
