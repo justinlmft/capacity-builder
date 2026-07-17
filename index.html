@@ -716,6 +716,10 @@
     };
     /* ordered easiest → hardest; chip layout follows this order */
     const SKILLS = {
+      mindfulness: {
+        label: "Mindfulness",
+        expect: "connect to the present moment through simple mindfulness"
+      },
       anchoring: {
         label: "Anchoring",
         expect: "anchor into safety"
@@ -735,10 +739,6 @@
       pendulating: {
         label: "Pendulating",
         expect: "pendulate safety and defense"
-      },
-      mindfulness: {
-        label: "Mindfulness",
-        expect: "connect to the present moment through simple mindfulness"
       }
     };
     /* Description elements — chosen per practice (descOn + delems on p2/p3).
@@ -1445,7 +1445,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#FAF9F5}
 
     function render() {
       chips("senseOpts", SENSES, () => st.sense, k => st.sense = k, false);
-      chips("p2opts", Object.fromEntries(Object.keys(SKILLS).filter(k => k !== "mindfulness").map(k => [k, SKILLS[k]])), () => st.p2.skill, k => st.p2.skill = k, true);
+      chips("p2opts", SKILLS, () => st.p2.skill, k => st.p2.skill = k, true);
       chips("p3opts", SKILLS, () => st.p3.skill, k => st.p3.skill = k, true);
       document.getElementById("p1vars").innerHTML = tog("p1", "emo", "Emotion check-in");
       document.getElementById("p2vars").innerHTML = varsHTML("p2");
