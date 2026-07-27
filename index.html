@@ -1558,17 +1558,33 @@ html,body{margin:0;height:100%;overflow:hidden;background:#FAF9F5}
         g.setTransform(dpr, 0, 0, dpr, 0, 0);
       }
 
-      function seed() {
-        motes = [];
+      /* fluid field density (ported from the app's player.html, Fluid Phase 3,
+         2026-07-19): reeds/motes/flies scale with the canvas width instead of
+         a fixed phone-era count, so a wide presenter/student window reads as
+         full as the app's own desktop view. Reduced-motion holds the
+         phone-minimum density regardless of width. */
+      function _fieldW() {
+        return canvas.clientWidth || innerWidth || 390;
+      }
+
+      function _initReeds() {
         reeds = [];
-        rips = [];
-        strands = [];
-        dust = [];
-        flies = [];
-        ripNext = 0;
-        sT = 0;
-        sLast = 0;
-        for (let i = 0; i < 9; i++) motes.push({
+        const RN = reduce ? 7 : Math.round(Math.max(7, Math.min(22, _fieldW() / 100)));
+        for (let i = 0; i < RN; i++) reeds.push({
+          x: (i / (RN - 1)) * .96 + .02 + (Math.random() - .5) * .028,
+          h: .24 + Math.random() * .42,
+          per: 8 + Math.random() * 8,
+          ph: Math.random() * 6.283,
+          amp: .035 + Math.random() * .045,
+          w: 1.1 + Math.random() * 1.5,
+          a: .3 + Math.random() * .32
+        });
+      }
+
+      function _initMotes() {
+        motes = [];
+        const RN = reduce ? 9 : Math.round(Math.max(9, Math.min(20, _fieldW() / 70)));
+        for (let i = 0; i < RN; i++) motes.push({
           x: Math.random(),
           y: Math.random(),
           r: 1.5 + Math.random() * 3.5,
@@ -1576,14 +1592,31 @@ html,body{margin:0;height:100%;overflow:hidden;background:#FAF9F5}
           dx: (Math.random() - .5) * .003,
           a: .18 + Math.random() * .3
         });
-        for (let i = 0; i < 7; i++) reeds.push({
-          x: .12 + .76 * (i / 6) + (Math.random() - .5) * .05,
-          h: .3 + Math.random() * .34,
-          per: 8 + Math.random() * 8,
-          ph: Math.random() * 6.283,
-          amp: .04 + Math.random() * .04,
-          w: 1.4 + Math.random() * 1.2
+      }
+
+      function _initFlies() {
+        flies = [];
+        const RN = reduce ? 7 : Math.round(Math.max(7, Math.min(14, _fieldW() / 100)));
+        for (let i = 0; i < RN; i++) flies.push({
+          x: .12 + .76 * (i / (RN - 1)) + (Math.random() - .5) * .09,
+          y: .15 + Math.random() * .62,
+          per: 5.5 + Math.random() * 6.5,
+          ph: Math.random() * 10,
+          wx: 8 + Math.random() * 9,
+          wy: 6 + Math.random() * 8
         });
+      }
+
+      function seed() {
+        rips = [];
+        strands = [];
+        dust = [];
+        ripNext = 0;
+        sT = 0;
+        sLast = 0;
+        _initMotes();
+        _initReeds();
+        _initFlies();
         for (let i = 0; i < 7; i++) strands.push({
           y: .15 + .7 * (i / 6) + (Math.random() - .5) * .06,
           len: .2 + Math.random() * .22,
@@ -1602,14 +1635,6 @@ html,body{margin:0;height:100%;overflow:hidden;background:#FAF9F5}
           ax: 4 + Math.random() * 6,
           ay: 8 + Math.random() * 9,
           a: .35 + Math.random() * .25
-        });
-        for (let i = 0; i < 7; i++) flies.push({
-          x: .12 + .76 * (i / 6) + (Math.random() - .5) * .09,
-          y: .15 + Math.random() * .62,
-          per: 5.5 + Math.random() * 6.5,
-          ph: Math.random() * 10,
-          wx: 8 + Math.random() * 9,
-          wy: 6 + Math.random() * 8
         });
         seeded = true;
       }
@@ -1695,7 +1720,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#FAF9F5}
               hh = rd.h * H,
               tx = bx + sw * hh,
               ty = by - hh;
-            g.strokeStyle = col(.5);
+            g.strokeStyle = col(rd.a != null ? rd.a : .5);
             g.lineWidth = rd.w;
             g.lineCap = 'round';
             g.beginPath();
@@ -1806,7 +1831,23 @@ html,body{margin:0;height:100%;overflow:hidden;background:#FAF9F5}
           raf = null;
         }
       }
-      addEventListener('resize', fit);
+      addEventListener('resize', function() {
+        fit();
+        if (!reduce) {
+          if (reeds.length) {
+            const want = Math.round(Math.max(7, Math.min(22, _fieldW() / 100)));
+            if (want !== reeds.length) _initReeds();
+          }
+          if (motes.length) {
+            const want = Math.round(Math.max(9, Math.min(20, _fieldW() / 70)));
+            if (want !== motes.length) _initMotes();
+          }
+          if (flies.length) {
+            const want = Math.round(Math.max(7, Math.min(14, _fieldW() / 100)));
+            if (want !== flies.length) _initFlies();
+          }
+        }
+      });
       return {
         set: set,
         show: show,
