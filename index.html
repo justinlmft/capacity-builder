@@ -814,6 +814,7 @@
       p2: {
         skill: "balancing",
         holdwatch: false,
+        bodySpecific: true,
         dur: 30,
         pend: 4,
         pendSec: 10,
@@ -825,6 +826,7 @@
       p3: {
         skill: "pendulating",
         holdwatch: true,
+        bodySpecific: true,
         dur: 15,
         pend: 4,
         pendSec: 10,
@@ -873,7 +875,7 @@
       pendulating: 5
     }; // break minutes by skill; Mindfulness (P1)=2, passed directly
     function capacityCheck(breakMin) {
-      const c = info("check your Capacity:",
+      const c = info("Check your capacity:",
         "1. Intolerable distress<br>2. Curiosity turns into evaluation<br>3. Losing connection with your breath<br>4. Intrusive cognitions" +
         "<br><br>Ask yourself:<br>– What do I need right now?<br>– Do I genuinely want to continue?<br>– Does my body genuinely want to continue?");
       if (breakMin) c.breakMin = breakMin;
@@ -888,6 +890,10 @@
     function ladderBeats(P, sense, o, v) { // o = {rate}
       const b = mkq(P),
         B = [];
+      /* THE ARRIVING BREATH (app parity, 2026-09-06). One intentional breath to open
+         every practice — the pair to "Take one intentional breath." at the end of the
+         closing. Everything between the two is natural, unsteered breathing. */
+      B.push(b("Take one intentional breath to begin.", "One breath in on purpose — and let it out however it wants to come out. — After this, we let your body breathe the way it wants. This one is on purpose; the rest are not."));
       if (sense === "touch") {
         B.push(b("Identify one thing in your space."));
         B.push(b("What do you hear?", HEAR_NOTE));
@@ -951,28 +957,39 @@
       B.push(b("As you mindfully experience it, are you more or less likely to smile?", "Let yourself smile if so."));
       B.push(b("Do you feel more or less connection…?", "…to the present? To your senses? Your breath? Your inner experience? — Check your capacity."));
       B.push(b("What emotion word best fits your current safety experience?", "Calm? Still? Playful? Joy? Curious? — “Something like…”"));
+      B.push(b("Does it make sense that you feel this right now?", "Given where you are and what you just did. — “I feel _____, which makes sense based on my life context.”"));
       B.push(b("Notice how safety feels in your body generally.", "Mobile or immobile? Heavy or light?"));
-      B.push(b("Notice how safety feels in your body specifically.", "Is there one place in your body where this emotion is even more obvious? Coming from, or going to? Common areas: face, chest, and belly."));
+      B.push(b("Notice how safety feels in your body specifically.", "Is there one place in your body where this emotion is even more obvious? Coming from, or going to? Common areas: face, chest, and belly. — If there’s nothing there, that’s fine. Numbness is a real experience too. Just notice the not-feeling."));
       B.push(b("How is your body breathing?", BREATH_NOTE_SHORT));
       if (v.descSafety !== false) descBeats(P, "safety", sense, v).forEach(x => B.push(x));
       if (o.rate) B.push(b("On a scale of 0–10, what is your current level of safety?"));
       return B;
     }
 
-    const CURIOSITY = (P) => mkq(P)("Do you feel interest or curiosity about your non-safety internal experiences?", "You can say yes or no.");
+    const CURIOSITY = (P) => mkq(P)("Do you feel interest or curiosity about your non-safety internal experiences?", "You can say yes or no. Both are good answers — noticing which one is true for you is the practice. A yes is what opens the work on the other side.");
 
     /* ---------- INVITING THE NON-SAFETY EMOTION ---------- */
-    function inviteBeats(P) {
-      const b = mkq(P);
-      return [
-        b("What is the non-safety emotion you would like to invite?", "“I feel _____.”"),
-        b("Does it make sense you have this non-safety emotion based on your life context?"),
-        b("Is it okay for this non-safety emotion to be?", "You can say yes or no."),
-        b("On a 0–10 scale, what is the intensity level of this non-safety emotion?"),
-        b("How does this non-safety emotion feel in your body generally?", "Mobile or immobile? Heavy or light?"),
-        b("How does this non-safety emotion feel in your body specifically?", "Is there one place in your body where this emotion is even more obvious? Coming from, or going to? Common areas: face, chest, and belly."),
-        b("How is your body breathing?", "Check your capacity.")
-      ];
+    function inviteBeats(P, v) {
+      const b = mkq(P),
+        B = [];
+      B.push(b("What is the non-safety emotion you would like to invite?", "“I feel _____.”"));
+      B.push(b("Does it make sense you have this non-safety emotion based on your life context?"));
+      B.push(b("Is it okay for this non-safety emotion to be?", "You can say yes or no."));
+      B.push(b("On a 0–10 scale, what is the intensity level of this non-safety emotion?"));
+      /* THE CAPACITY GATE, WHERE THE PRACTICE ACTUALLY ESCALATES (app parity, 2026-09-06).
+         A re-check has to sit where there is something new to have capacity FOR — the moment
+         before the room is asked into the body — not at the moment it crosses the axis, two
+         beats after the interest question. */
+      B.push(b("Do you have the capacity to turn toward the non-safety?", "Be honest with yourself — capacity and genuine willingness, not just permission. If yes, we go gently. If not, staying with safety is a complete practice on its own. — Intolerable distress? Curiosity turning into evaluation? Losing the breath? Intrusive thoughts?"));
+      B.push(b("How does this non-safety emotion feel in your body generally?", "Mobile or immobile? Heavy or light?"));
+      /* THE SPECIFIC DEPTH (app parity, 2026-09-06). The shallowest a Balancing or Pendulating
+         practice goes is the body OVERALL. Finding the one place it lives is the next depth,
+         and describing it is the one after that — cumulative, and gated on mastery. */
+      if (!v || v.bodySpecific !== false) {
+        B.push(b("How does this non-safety emotion feel in your body specifically?", "Is there one place in your body where this emotion is even more obvious? Coming from, or going to? Common areas: face, chest, and belly. — If you’re not finding it in your body, that’s okay. Don’t go hunting. Come back to safety for a moment and we’ll go on from there."));
+      }
+      B.push(b("How is your body breathing?", "Check your capacity."));
+      return B;
     }
 
     /* ---------- CLOSING OF EACH SKILL PRACTICE ---------- */
@@ -981,9 +998,10 @@
       return [
         b("Let your awareness begin to widen.", "No rush."),
         b("Reconnect to the external present moment.", "If your eyes are closed, let them open when they’re ready. — What do you see? What do you hear?"),
+        b("Come back to the one thing you anchored on.", "Whatever it was — a movement, an image, something you could see, hear, or hold. Give it a bit of appreciation for carrying you into the present moment."),
+        b("Give yourself kindness if you have it.", "Real, not performative. If there isn’t one available right now, that’s alright — you showed up, and that stands on its own whether or not you can say it to yourself."),
         b("Let your body move however feels good (or stay just as you are).", "Stretch, shift, settle. If you’ve been moving, keep going. — Push, pull, squeeze, wiggle, clench, roll, stand, stretch, hug… There’s no wrong way."),
         b("Take one intentional breath."),
-        b("Give yourself kindness if you have it.", "You’ve earned it. Even a “good job, self” counts."),
         capacityCheck(breakMin)
       ];
     }
@@ -1009,6 +1027,10 @@
       B.push(b("Bring your attention back to the safety experience.", t(6)));
       B.push(b("Has safety changed?"));
       B.push(b("Remind yourself that you’re literally safe."));
+      /* THE INTEREST IMPULSE, READ ONCE MORE (app parity, 2026-09-06). It is a dose signal,
+         not only a door: as long as the interest is there it is okay to keep pendulating,
+         and when it thins, that is the sign to stop. Once — it is not a refrain. */
+      B.push(b("Are you still curious about the non-safety?", "As long as the interest is still there, it’s okay to keep going. If curiosity has thinned, or hesitation has shown up, that’s the sign to stop — and stopping inside your capacity is the win, not the failure."));
       B.push(b("Bring your attention back to the non-safety experience."));
       B.push(b("Has non-safety changed?", t(6)));
       B.push(b("Bring your attention back to the safety experience.", t(4)));
@@ -1021,7 +1043,12 @@
           B.push(b("And back to safety, briefly.", "~2 seconds"));
         }
       }
-      if (v.holdwatch) B.push(b("Hold the two. Remain open to potential shifts.", "~" + v.dur + " seconds — Do they want to interact?"));
+      if (v.holdwatch) {
+        /* Permission for impulse AND for stillness, immediately before the hold — this is
+           where spontaneous expression shows up, and it needs saying before it does. */
+        B.push(b("Nothing has to happen here.", "You don’t have to make anything move or shift — being with it is enough. And if an impulse to move shows up — a stir, a shake, a stretch, a push — let it. Stillness is fine too."));
+        B.push(b("Hold the two. Remain open to potential shifts.", "~" + v.dur + " seconds — Do they want to interact?"));
+      }
       return B;
     }
 
@@ -1044,6 +1071,9 @@
       const b = mkq(P),
         B = [];
       B.push(ptitle(P, "Mindfulness", "", "Brief, simple mindfulness — connect to the present moment.", "safety"));
+      /* THE ARRIVING BREATH (app parity, 2026-09-06) — the pair to the intentional breath
+         that now ends every practice. These two are the only steered breaths in the session. */
+      B.push(b("Take one intentional breath to begin.", "One breath in on purpose — and let it out however it wants to come out. — After this, we let your body breathe the way it wants. This one is on purpose; the rest are not."));
       B.push(b("On a scale of 0–10, what is your current level of safety?"));
       B.push(b("How is your body breathing?", BREATH_NOTE_FULL));
       B.push(b("What do you hear?", HEAR_NOTE));
@@ -1057,6 +1087,12 @@
         B.push(b("Is there an emotion you’re holding onto?"));
         B.push(b("Invite it to be with you."));
       }
+      /* A MINDFULNESS PRACTICE HAS TO CLOSE TOO (app parity, 2026-09-06). This used to end
+         on the capacity slide and send the room straight into a break, with no way back out
+         of an eyes-closed practice. The short form of the canonical closing. */
+      B.push(b("Let your awareness begin to widen.", "No rush."));
+      B.push(b("Reconnect to the external present moment.", "If your eyes are closed, let them open when they’re ready. — What do you see? What do you hear?"));
+      B.push(b("Take one intentional breath."));
       B.push(capacityCheck(2));
       return B;
     }
@@ -1065,6 +1101,15 @@
       const b = mkq(P),
         key = v.skill;
       if (key === "mindfulness") return mindfulnessBeats(P, v);
+      /* DEPTH GATING (app parity, 2026-09-06). The three defense depths are cumulative —
+         the body overall, then the one place it lives, then description — so a deeper one
+         cannot run without the shallower one. Describing defense also requires describing
+         safety: you cannot hold non-safety next to safety you have not described. And hold
+         & watch is an add-on at the deepest depth only, never a free toggle. */
+      if (v.bodySpecific === undefined) v.bodySpecific = true;
+      if (!v.bodySpecific) v.descOn = false;
+      if (v.descOn) v.descSafety = true;
+      if (!v.descOn) v.holdwatch = false;
       let B = [];
       const tagLines = [];
       if (key === "obstacles") tagLines.push("4 STATEMENTS");
@@ -1089,11 +1134,16 @@
           rate: true
         }, v));
         B.push(CURIOSITY(P));
-        B = B.concat(inviteBeats(P));
+        B = B.concat(inviteBeats(P, v));
         if (v.descOn) descBeats(P, "defense", st.sense, v).forEach(x => B.push(x));
         B.push(b("Bring your attention back to the safety experience."));
         B.push(b("Has safety changed?"));
-        if (v.holdwatch) B.push(b("Hold the two.", "~" + v.dur + " seconds — Do they want to interact?"));
+        if (v.holdwatch) {
+          /* Permission for impulse AND for stillness, immediately before the hold — this is
+               where spontaneous expression shows up, and it needs saying before it does. */
+          B.push(b("Nothing has to happen here.", "You don’t have to make anything move or shift — being with it is enough. And if an impulse to move shows up — a stir, a shake, a stretch, a push — let it. Stillness is fine too."));
+          B.push(b("Hold the two.", "~" + v.dur + " seconds — Do they want to interact?"));
+        }
       } else if (key === "pendulating") {
         let we = "We will: pendulate " + v.pend + " times" + (v.holdwatch ? ", decreasing in time spent on each" : ", ~" + v.pendSec + " seconds each") + (v.descOn ? " — describe defense" : "") + (v.holdwatch ? " — hold and watch safety and defense for ~" + v.dur + " seconds, open to the two interacting (or not)" : "") + ".";
         B.push(ptitle(P, "Pendulating", TAG, we, TRACK));
@@ -1102,7 +1152,7 @@
           rate: false
         }, v));
         B.push(CURIOSITY(P));
-        B = B.concat(inviteBeats(P));
+        B = B.concat(inviteBeats(P, v));
         B = B.concat(pendBeats(P, v));
       } else if (key === "imagery") { // from Self-Regulation Simplified, Imagery & Invitation Practices 1–2
         B.push(ptitle(P, "Imagery & Invitation", TAG, "We will: anchor into safety — imagine & invite a non-safety emotion.", TRACK));
@@ -1123,7 +1173,7 @@
         B = B.concat(ladderBeats(P, sense, {
           rate: true
         }, v));
-        B.push(b("4 statements.", "Check your capacity."));
+        B.push(b("4 statements.", "We’ll say four statements. Notice what surfaces — the tightening, the argument, the thought."));
         pickObstacles(4).forEach(s => B.push(b(s, "Notice what surfaces as you say it to yourself.")));
         B.push(b("Validate the Obstacle."));
         B.push(b("Normalize the Obstacle."));
@@ -1139,6 +1189,9 @@
       const b = mkq("Practice 1"),
         B = [];
       B.push(ptitle("Practice 1", "Mindfulness", "", "Brief, simple mindfulness — connect to the present moment.", "safety"));
+      /* THE ARRIVING BREATH (app parity, 2026-09-06) — the pair to the intentional breath
+         that now ends every practice. These two are the only steered breaths in the session. */
+      B.push(b("Take one intentional breath to begin.", "One breath in on purpose — and let it out however it wants to come out. — After this, we let your body breathe the way it wants. This one is on purpose; the rest are not."));
       B.push(b("On a scale of 0–10, what is your current level of safety?"));
       B.push(b("How is your body breathing?", BREATH_NOTE_FULL));
       B.push(b("What do you hear?", HEAR_NOTE));
@@ -1152,6 +1205,12 @@
         B.push(b("Is there an emotion you’re holding onto?"));
         B.push(b("Invite it to be with you."));
       }
+      /* A MINDFULNESS PRACTICE HAS TO CLOSE TOO (app parity, 2026-09-06). This used to end
+         on the capacity slide and send the room straight into a break, with no way back out
+         of an eyes-closed practice. The short form of the canonical closing. */
+      B.push(b("Let your awareness begin to widen.", "No rush."));
+      B.push(b("Reconnect to the external present moment.", "If your eyes are closed, let them open when they’re ready. — What do you see? What do you hear?"));
+      B.push(b("Take one intentional breath."));
       B.push(capacityCheck(2));
       return B;
     }
@@ -1382,12 +1441,25 @@ html,body{margin:0;height:100%;overflow:hidden;background:#FAF9F5}
         s = v.skill;
       let h = "";
       if (s === "mindfulness") return tog(pr, "emo", "Emotion check-in");
-      h += tog(pr, "descSafety", "Describe safety");
-      if (s === "balancing" || s === "pendulating") {
-        h += tog(pr, "descOn", "Describe defense");
-        if (v.descOn) h += delemsHTML(pr);
-        h += tog(pr, "holdwatch", "Hold &amp; watch");
-        if (v.holdwatch) h += miniChips(pr, "dur", [15, 30, 45, 60, 90, 120], "Hold", "s");
+      const deep = (s === "balancing" || s === "pendulating");
+      if (v.bodySpecific === undefined) v.bodySpecific = true;
+      /* Describing safety is a free choice UNTIL defense description is on, at which point
+         it is required — you cannot hold non-safety next to safety you have not described. */
+      if (deep && v.descOn) h += '<label class="toggle"><input type="checkbox" checked disabled> Describe safety <span class="dr">required</span></label>';
+      else h += tog(pr, "descSafety", "Describe safety");
+      if (deep) {
+        /* DEPTH — cumulative, and in order (app parity, 2026-09-06): the body overall, then
+           the one place it lives, then description. A deeper one is not offerable without the
+           shallower one, and hold & watch is an add-on at the deepest depth only. */
+        h += tog(pr, "bodySpecific", "Find the one place it lives");
+        if (v.bodySpecific) {
+          h += tog(pr, "descOn", "Describe defense");
+          if (v.descOn) {
+            h += delemsHTML(pr);
+            h += tog(pr, "holdwatch", "Hold &amp; watch");
+            if (v.holdwatch) h += miniChips(pr, "dur", [15, 30, 45, 60, 90, 120], "Hold", "s");
+          }
+        }
       }
       if (s === "pendulating") {
         h += miniChips(pr, "pend", [3, 4, 5, 6], "Pendulations", "");
@@ -1413,6 +1485,7 @@ html,body{margin:0;height:100%;overflow:hidden;background:#FAF9F5}
         v.pend = pick([3, 4, 5, 6]);
         v.pendSec = pick([5, 10, 15, 20, 30]);
         v.skip = false;
+        v.bodySpecific = coin();
         v.descOn = coin();
         const keys = Object.keys(DESC_LABELS);
         for (let i = keys.length - 1; i > 0; i--) {
