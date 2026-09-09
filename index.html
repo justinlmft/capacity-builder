@@ -884,17 +884,26 @@
 
     const BREATH_NOTE_FULL = "Check in with the natural ins and outs of your breath. How is your body naturally breathing right now? Don’t change your breathing, just notice it. If it changes by itself because you’ve paid attention to it, that’s fine. — Chest or belly? Full or shallow? Tense or relaxed?";
     const BREATH_NOTE_SHORT = "Not controlling. — Chest or belly? Full or shallow? Tense or relaxed?";
-    const HEAR_NOTE = "Anything? Silence? Inside the room… what do you hear? Outside the room… what do you hear?";
+    const HEAR_NOTE = "Anything? Silence? Outside the room… what do you hear? Inside the room… what do you hear?";
 
     /* ---------- THE ANCHORING LADDER (opens P2 and P3, per the decks) ---------- */
     function ladderBeats(P, sense, o, v) { // o = {rate}
       const b = mkq(P),
         B = [];
-      /* THE ARRIVING BREATH (app parity, 2026-09-06). One intentional breath to open
-         every practice — the pair to "Take one intentional breath." at the end of the
-         closing. Everything between the two is natural, unsteered breathing. */
-      B.push(b("Take one intentional breath to begin.", "One breath in on purpose — and let it out however it wants to come out. — After this, we let your body breathe the way it wants. This one is on purpose; the rest are not."));
+      /* THE ARRIVING BREATH IS NOT PUSHED HERE ANY MORE (2026-09-07). It has to be the
+         FIRST beat of the practice, and three of CB's five skills push "Choose a non-safety
+         emotion." before calling this — so a breath announcing itself as the beginning
+         landed second. Each practice now pushes ARRIVE() before anything else.
+         WORKING INWARD the ladder runs brain → body, general → specific, top → bottom,
+         outside → in (Justin, 2026-09-07). "Imagine & Invite anything else" is a look
+         INWARD, so it opens the practice instead of interrupting the outside-in sense run
+         halfway through, which is where it used to sit. */
+      if (v.skill !== "imagery") B.push(b("Imagine & Invite anything else you may be feeling right now."));
       if (sense === "touch") {
+        /* GENERAL → SPECIFIC. Touch used to name one object before establishing any field,
+           the only sense that did. Whole-body contact first, then the skin, then the one thing. */
+        B.push(b("Notice everything your body is in contact with.", "Whatever is holding you — chair, floor, bed. Firm or soft?"));
+        B.push(b("Now narrow to your skin.", "The air, your clothes, anything close enough to reach."));
         B.push(b("Identify one thing in your space."));
         B.push(b("What do you hear?", HEAR_NOTE));
         B.push(b("How is your body breathing?", BREATH_NOTE_FULL));
@@ -912,10 +921,11 @@
         B.push(b("How is your body breathing?", BREATH_NOTE_FULL));
       } else if (sense === "movement") {
         B.push(b("Begin to move, gently and on purpose.", "Small and easy — you’re not performing. Just enough to feel it."));
-        B.push(b("Roll your ankles.", "Slow, both directions. No strain."));
-        B.push(b("Roll your wrists.", "Let your hands soften."));
-        B.push(b("Roll your shoulders.", "Up, back, and down — let them drop."));
+        /* TOP → BOTTOM working inward. This ran ankles-up before 2026-09-07. */
         B.push(b("Roll your neck, slowly.", "Small arcs, only where it feels good. Skip anything sharp."));
+        B.push(b("Roll your shoulders.", "Up, back, and down — let them drop."));
+        B.push(b("Roll your wrists.", "Let your hands soften."));
+        B.push(b("Roll your ankles.", "Slow, both directions. No strain."));
         B.push(b("Let yourself stretch into whatever wants to lengthen.", "Reach, or a slight side bend — just to the easy edge."));
         B.push(b("Pause. Notice what lingers.", "The sensation doesn’t stop the moment you do — feel it settle."));
         B.push(b("How is your body breathing?", BREATH_NOTE_FULL));
@@ -928,7 +938,6 @@
         B.push(b("What do you feel there?", "The air, the temperature, the ground beneath you."));
         B.push(b("How is your body breathing?", BREATH_NOTE_FULL));
       }
-      if (v.skill !== "imagery") B.push(b("Imagine & Invite anything else you may be feeling right now."));
       if (sense === "touch") {
         B.push(b("Focus on your one thing."));
         B.push(b("Does it give you a sense of like or dislike?", "What about it do you like?"));
@@ -958,15 +967,26 @@
       B.push(b("Do you feel more or less connection…?", "…to the present? To your senses? Your breath? Your inner experience? — Check your capacity."));
       B.push(b("What emotion word best fits your current safety experience?", "Calm? Still? Playful? Joy? Curious? — “Something like…”"));
       B.push(b("Does it make sense that you feel this right now?", "Given where you are and what you just did. — “I feel _____, which makes sense based on my life context.”"));
+      /* READING ONE OF TWO (Justin, 2026-09-07): "cognitive monitoring and subtle capacity
+         gauge, and also a comparison to before and after." The defense half rates intensity
+         right after naming and before the body; the safety half now does the same, so the
+         two halves mirror — and having a reading here as well as at the end is what makes
+         the before/after comparison possible at all. */
+      if (o.rate) B.push(b("On a scale of 0–10, what is your current level of safety?"));
       B.push(b("Notice how safety feels in your body generally.", "Mobile or immobile? Heavy or light?"));
       B.push(b("Notice how safety feels in your body specifically.", "Is there one place in your body where this emotion is even more obvious? Coming from, or going to? Common areas: face, chest, and belly. — If there’s nothing there, that’s fine. Numbness is a real experience too. Just notice the not-feeling."));
       B.push(b("How is your body breathing?", BREATH_NOTE_SHORT));
       if (v.descSafety !== false) descBeats(P, "safety", sense, v).forEach(x => B.push(x));
-      if (o.rate) B.push(b("On a scale of 0–10, what is your current level of safety?"));
+      /* READING TWO — the after half of the pair. */
+      if (o.rate) B.push(b("On a scale of 0–10, what is your current level of safety?", "Compare it with your reading from before."));
       return B;
     }
 
     const CURIOSITY = (P) => mkq(P)("Do you feel interest or curiosity about your non-safety internal experiences?", "You can say yes or no. Both are good answers — noticing which one is true for you is the practice. A yes is what opens the work on the other side.");
+    /* ARRIVE-BREATH — the first beat of every practice, the pair to the intentional breath
+       that closes it. Pushed by each practice rather than by the ladder, because three of
+       CB's five skills push a setup beat before the ladder runs. */
+    const ARRIVE = (P) => mkq(P)("Take one intentional breath to begin.", "One breath in on purpose — and let it out however it wants to come out. — After this, we let your body breathe the way it wants. This one is on purpose; the rest are not.");
 
     /* ---------- INVITING THE NON-SAFETY EMOTION ---------- */
     function inviteBeats(P, v) {
@@ -993,17 +1013,25 @@
     }
 
     /* ---------- CLOSING OF EACH SKILL PRACTICE ---------- */
+    /* WORKING OUTWARD IS THE INWARD ORDER REVERSED (Justin, 2026-09-07): specific → general,
+       inside → out, body → brain. Anchor return first, while attention is still narrow; the
+       body moves before the kind word. The two steered breaths frame the practice and sit
+       outside this ordering. `o.anchor === false` drops the anchor return for a practice that
+       never took an anchor object — the Practice 1 mindfulness run. */
+    function closeBeats(P, o) {
+      const b = mkq(P), B = [];
+      if (!o || o.anchor !== false) B.push(
+        b("Come back to the one thing you anchored on.", "Whatever it was — a movement, an image, something you could see, hear, or hold. Give it a bit of appreciation for carrying you into the present moment."));
+      B.push(b("Let your awareness begin to widen.", "No rush."));
+      B.push(b("Reconnect to the external present moment.", "If your eyes are closed, let them open when they’re ready. — What do you see? What do you hear?"));
+      B.push(b("Let your body move however feels good (or stay just as you are).", "Stretch, shift, settle. If you’ve been moving, keep going. — Push, pull, squeeze, wiggle, clench, roll, stand, stretch, hug… There’s no wrong way."));
+      B.push(b("Give yourself kindness if you have it.", "Real, not performative. If there isn’t one available right now, that’s alright — you showed up, and that stands on its own whether or not you can say it to yourself."));
+      B.push(b("Take one intentional breath."));
+      return B;
+    }
+
     function closingBeats(P, breakMin) {
-      const b = mkq(P);
-      return [
-        b("Let your awareness begin to widen.", "No rush."),
-        b("Reconnect to the external present moment.", "If your eyes are closed, let them open when they’re ready. — What do you see? What do you hear?"),
-        b("Come back to the one thing you anchored on.", "Whatever it was — a movement, an image, something you could see, hear, or hold. Give it a bit of appreciation for carrying you into the present moment."),
-        b("Give yourself kindness if you have it.", "Real, not performative. If there isn’t one available right now, that’s alright — you showed up, and that stands on its own whether or not you can say it to yourself."),
-        b("Let your body move however feels good (or stay just as you are).", "Stretch, shift, settle. If you’ve been moving, keep going. — Push, pull, squeeze, wiggle, clench, roll, stand, stretch, hug… There’s no wrong way."),
-        b("Take one intentional breath."),
-        capacityCheck(breakMin)
-      ];
+      return closeBeats(P).concat([capacityCheck(breakMin)]);
     }
 
     /* ---------- PENDULATION SEQUENCE ---------- */
@@ -1071,28 +1099,27 @@
       const b = mkq(P),
         B = [];
       B.push(ptitle(P, "Mindfulness", "", "Brief, simple mindfulness — connect to the present moment.", "safety"));
-      /* THE ARRIVING BREATH (app parity, 2026-09-06) — the pair to the intentional breath
-         that now ends every practice. These two are the only steered breaths in the session. */
-      B.push(b("Take one intentional breath to begin.", "One breath in on purpose — and let it out however it wants to come out. — After this, we let your body breathe the way it wants. This one is on purpose; the rest are not."));
+      B.push(ARRIVE(P));
       B.push(b("On a scale of 0–10, what is your current level of safety?"));
       B.push(b("How is your body breathing?", BREATH_NOTE_FULL));
+      /* OUTSIDE → IN by distance (Justin, 2026-09-07): sight, then sound, then touch —
+         the most proximal sense last. This ran hear → touch → see, with touch in the middle. */
+      B.push(b("What do you see?", "Open your eyes if they’re closed, as they are ready to open. You don’t need to do anything special — just look where they want you to look. If your neck wants to move to help your eyes see more, let your neck and eyes work together. Is there one thing that is pulling at your eyes? What’s its shape? Let your eyes trace the edges. Notice how the light from the room touches it. And the shadows it creates."));
+      B.push(b("How is your body breathing?", BREATH_NOTE_SHORT));
       B.push(b("What do you hear?", HEAR_NOTE));
       B.push(b("How is your body breathing?", BREATH_NOTE_SHORT));
       B.push(b("What do you touch?", "We’ll start with your entire body. What is it you’re sitting, standing, laying, or leaning on? Can you feel its firmness? Or is it soft? Does it let you sink into it? What can you feel specifically on your skin? The air? The fabric of your clothes? Something you can hold onto nearby?"));
-      B.push(b("How is your body breathing?", BREATH_NOTE_SHORT));
-      B.push(b("What do you see?", "Open your eyes if they’re closed, as they are ready to open. You don’t need to do anything special — just look where they want you to look. If your neck wants to move to help your eyes see more, let your neck and eyes work together. Is there one thing that is pulling at your eyes? What’s its shape? Let your eyes trace the edges. Notice how the light from the room touches it. And the shadows it creates."));
       B.push(b("How is your body breathing?", BREATH_NOTE_SHORT));
       B.push(b("On a scale of 0–10, what is your current level of safety?"));
       if (v.emo) {
         B.push(b("Is there an emotion you’re holding onto?"));
         B.push(b("Invite it to be with you."));
       }
-      /* A MINDFULNESS PRACTICE HAS TO CLOSE TOO (app parity, 2026-09-06). This used to end
-         on the capacity slide and send the room straight into a break, with no way back out
-         of an eyes-closed practice. The short form of the canonical closing. */
-      B.push(b("Let your awareness begin to widen.", "No rush."));
-      B.push(b("Reconnect to the external present moment.", "If your eyes are closed, let them open when they’re ready. — What do you see? What do you hear?"));
-      B.push(b("Take one intentional breath."));
+      /* THE CANONICAL CLOSE, MINUS THE ANCHOR RETURN (2026-09-07). This practice takes no
+         anchor object, so there is nothing to come back to — but it does need the rest of the
+         way out, because the room is sitting with eyes closed and the next thing is a break.
+         Replaces a hand-rolled three-beat close that existed nowhere else in the system. */
+      closeBeats(P, {anchor:false}).forEach(x => B.push(x));
       B.push(capacityCheck(2));
       return B;
     }
@@ -1180,6 +1207,9 @@
         B.push(b("Imagine.", "What does it look like? Where is it? What is it doing?"));
         B.push(b("Invite the Obstacle to be with you while you reconnect with the external world."));
       }
+      /* ARRIVE-BREATH IS BEAT ONE — after the title slide, before everything else,
+         including the "Choose a non-safety emotion." that three of these skills push. */
+      B.splice(1, 0, ARRIVE(P));
       B = B.concat(closingBeats(P, BREAK_MIN[v.skill] || 3));
       return B;
     }
@@ -1189,28 +1219,27 @@
       const b = mkq("Practice 1"),
         B = [];
       B.push(ptitle("Practice 1", "Mindfulness", "", "Brief, simple mindfulness — connect to the present moment.", "safety"));
-      /* THE ARRIVING BREATH (app parity, 2026-09-06) — the pair to the intentional breath
-         that now ends every practice. These two are the only steered breaths in the session. */
-      B.push(b("Take one intentional breath to begin.", "One breath in on purpose — and let it out however it wants to come out. — After this, we let your body breathe the way it wants. This one is on purpose; the rest are not."));
+      B.push(ARRIVE("Practice 1"));
       B.push(b("On a scale of 0–10, what is your current level of safety?"));
       B.push(b("How is your body breathing?", BREATH_NOTE_FULL));
+      /* OUTSIDE → IN by distance (Justin, 2026-09-07): sight, then sound, then touch —
+         the most proximal sense last. This ran hear → touch → see, with touch in the middle. */
+      B.push(b("What do you see?", "Open your eyes if they’re closed, as they are ready to open. You don’t need to do anything special — just look where they want you to look. If your neck wants to move to help your eyes see more, let your neck and eyes work together. Is there one thing that is pulling at your eyes? What’s its shape? Let your eyes trace the edges. Notice how the light from the room touches it. And the shadows it creates."));
+      B.push(b("How is your body breathing?", BREATH_NOTE_SHORT));
       B.push(b("What do you hear?", HEAR_NOTE));
       B.push(b("How is your body breathing?", BREATH_NOTE_SHORT));
       B.push(b("What do you touch?", "We’ll start with your entire body. What is it you’re sitting, standing, laying, or leaning on? Can you feel its firmness? Or is it soft? Does it let you sink into it? What can you feel specifically on your skin? The air? The fabric of your clothes? Something you can hold onto nearby?"));
-      B.push(b("How is your body breathing?", BREATH_NOTE_SHORT));
-      B.push(b("What do you see?", "Open your eyes if they’re closed, as they are ready to open. You don’t need to do anything special — just look where they want you to look. If your neck wants to move to help your eyes see more, let your neck and eyes work together. Is there one thing that is pulling at your eyes? What’s its shape? Let your eyes trace the edges. Notice how the light from the room touches it. And the shadows it creates."));
       B.push(b("How is your body breathing?", BREATH_NOTE_SHORT));
       B.push(b("On a scale of 0–10, what is your current level of safety?"));
       if (st.p1.emo) {
         B.push(b("Is there an emotion you’re holding onto?"));
         B.push(b("Invite it to be with you."));
       }
-      /* A MINDFULNESS PRACTICE HAS TO CLOSE TOO (app parity, 2026-09-06). This used to end
-         on the capacity slide and send the room straight into a break, with no way back out
-         of an eyes-closed practice. The short form of the canonical closing. */
-      B.push(b("Let your awareness begin to widen.", "No rush."));
-      B.push(b("Reconnect to the external present moment.", "If your eyes are closed, let them open when they’re ready. — What do you see? What do you hear?"));
-      B.push(b("Take one intentional breath."));
+      /* THE CANONICAL CLOSE, MINUS THE ANCHOR RETURN (2026-09-07). This practice takes no
+         anchor object, so there is nothing to come back to — but it does need the rest of the
+         way out, because the room is sitting with eyes closed and the next thing is a break.
+         Replaces a hand-rolled three-beat close that existed nowhere else in the system. */
+      closeBeats("Practice 1", {anchor:false}).forEach(x => B.push(x));
       B.push(capacityCheck(2));
       return B;
     }
